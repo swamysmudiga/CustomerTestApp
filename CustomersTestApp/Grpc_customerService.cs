@@ -2,10 +2,10 @@
 
 public class Grpc_customerService : ICustomerService
 {
-    public Customer[] get_cust()
-    {
-        return _List1;
-    }
+    //public Customer[] get_cust()
+    //{
+    //    return _customers;
+    //}
 
     #region Constructors
 
@@ -15,8 +15,9 @@ public class Grpc_customerService : ICustomerService
 
     #endregion Constructors
 
-    private Customer[] _List1 =
-    [
+    private List<Customer> _customers = new List<Customer>
+    {
+
         new Customer
         {
             Id = Guid.NewGuid(),
@@ -41,16 +42,62 @@ public class Grpc_customerService : ICustomerService
             Discount = 0,
             Can_Remove = true
         }
-    ];
+    };
+    
 
-    public Task<bool> AddCustomer(Customer c)
+    public async Task<bool> AddCustomer(Customer customer)
     {
-        throw new NotImplementedException();
+        await Task.Run(() =>
+        {
+            customer.Id = Guid.NewGuid();
+            _customers.Add(customer);
+        });
+        return true;
     }
+    public async Task<bool> UpdateCustomer(Customer customer)
+    {
+        //var existingCustomer = _customers.FirstOrDefault(c => c.Id == customer.Id);
+        var existingCustomer = await GetCustomerById(customer.Id);
+        if (existingCustomer != null)
+        {
+            await Task.Run(() =>
+            {
+                existingCustomer.name = customer.name;
+                existingCustomer.Email = customer.Email;
+                existingCustomer.Discount = customer.Discount;
+                //existingCustomer.Can_Remove = customer.Can_Remove;
+            });
+            return true;
+        }
+        return false;
+    }
+    public async Task<bool> DeleteCustomer(Guid customerId)
+    {
+        var customerById = await GetCustomerById(customerId);
+        if (customerById != null && customerById.Can_Remove) 
+        {
+            await Task.Run(() =>
+            {
+                _customers.Remove(customerById);
+            });
+            return true;
+        }
+        return false;
+    }
+
+    public async Task<Customer?> GetCustomerById(Guid customerId)
+    {
+
+        return await Task.Run(() =>
+        {
+            return _customers.FirstOrDefault(c => c.Id == customerId);
+        });
+    }
+
 
     public IAsyncEnumerable<Customer> GetCustomers(CancellationToken cancellationToken)
     {
-        return _List1.ToAsyncEnumerable();
+        return _customers.ToAsyncEnumerable();
     }
 
     // todo implement an asynchronous CRUD
