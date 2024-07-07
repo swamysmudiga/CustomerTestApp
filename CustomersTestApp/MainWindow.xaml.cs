@@ -1,13 +1,14 @@
-﻿using CustomersTestApp.ViewModels;
-using System.Windows;
+﻿using System.Windows;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace CustomersTestApp;
-
-public partial class MainWindow : Window
+namespace CustomersTestApp
 {
-    public MainWindow()
+    public partial class MainWindow : Window
     {
-        InitializeComponent();
-        DataContext = new MainViewModel();
+        public MainWindow()
+        {
+            InitializeComponent();
+            DataContext = App.ServiceProvider.GetRequiredService<ViewModels.MainViewModel>();
+        }
     }
 }

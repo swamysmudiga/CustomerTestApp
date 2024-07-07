@@ -1,13 +1,55 @@
 syntax = "proto3";
-package siw;
+
 option csharp_namespace = "IPC";
 
-service CustomerService 
-{
-  
+package siw;
+
+service CustomerService {
+  rpc GetCustomer (GetCustomerRequest) returns (GetCustomerResponse);
+  rpc GetCustomers (GetCustomersRequest) returns (stream GetCustomerResponse);
+  rpc AddCustomer (AddCustomerRequest) returns (AddCustomerResponse);
+  rpc UpdateCustomer (UpdateCustomerRequest) returns (UpdateCustomerResponse);
+  rpc DeleteCustomer (DeleteCustomerRequest) returns (DeleteCustomerResponse);
 }
 
-message Customer
-{
+message Customer {
+  string id = 1;
+  string name = 2;
+  string email = 3;
+  int32 discount = 4;
+  bool CanRemove = 5;
+}
 
+message GetCustomerRequest {
+  string id = 1;
+}
+
+message GetCustomerResponse {
+  Customer customer = 1;
+}
+
+message GetCustomersRequest {}
+
+message AddCustomerRequest {
+  Customer customer = 1;
+}
+
+message AddCustomerResponse {
+  bool success = 1;
+}
+
+message UpdateCustomerRequest {
+  Customer customer = 1;
+}
+
+message UpdateCustomerResponse {
+  bool success = 1;
+}
+
+message DeleteCustomerRequest {
+  string id = 1;
+}
+
+message DeleteCustomerResponse {
+  bool success = 1;
 }
