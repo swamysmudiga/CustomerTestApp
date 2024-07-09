@@ -1,5 +1,6 @@
-﻿using System.Windows;
+﻿using CustomersTestApp.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using System.Windows;
 
 namespace CustomersTestApp
 {
@@ -8,7 +9,7 @@ namespace CustomersTestApp
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = App.ServiceProvider.GetRequiredService<ViewModels.MainViewModel>();
+            DataContext = App.ServiceProvider.GetRequiredService<MainViewModel>();
         }
     }
 }

@@ -28,10 +28,10 @@ namespace CustomersTestApp
                 Customer = new IPC.Customer
                 {
                     Id = customer.Id.ToString(),
-                    Name = customer.name,
+                    Name = customer.Name,
                     Email = customer.Email,
                     Discount = customer.Discount,
-                    CanRemove = customer.Can_Remove
+                    CanRemove = customer.CanRemove
                 }
             };
 
@@ -46,10 +46,10 @@ namespace CustomersTestApp
                 Customer = new IPC.Customer
                 {
                     Id = customer.Id.ToString(),
-                    Name = customer.name,
+                    Name = customer.Name,
                     Email = customer.Email,
                     Discount = customer.Discount,
-                    CanRemove = customer.Can_Remove
+                    CanRemove = customer.CanRemove
                 }
             };
 
@@ -69,13 +69,18 @@ namespace CustomersTestApp
             var request = new GetCustomerRequest { Id = customerId.ToString() };
             var response = await _client.GetCustomerAsync(request);
 
-            return response.Customer == null ? null : new Customer
+            if (response.Customer == null)
+            {
+                return null;
+            }
+
+            return new Customer
             {
                 Id = Guid.Parse(response.Customer.Id),
-                name = response.Customer.Name,
+                Name = response.Customer.Name,
                 Email = response.Customer.Email,
                 Discount = response.Customer.Discount,
-                Can_Remove = response.Customer.CanRemove
+                CanRemove = response.Customer.CanRemove
             };
         }
 
@@ -89,40 +94,12 @@ namespace CustomersTestApp
                 yield return new Customer
                 {
                     Id = Guid.Parse(response.Customer.Id),
-                    name = response.Customer.Name,
+                    Name = response.Customer.Name,
                     Email = response.Customer.Email,
                     Discount = response.Customer.Discount,
-                    Can_Remove = response.Customer.CanRemove
+                    CanRemove = response.Customer.CanRemove
                 };
             }
         }
-
-        private Customer[] _List1 =
-        {
-            new Customer
-            {
-                Id = Guid.NewGuid(),
-                name = "Microsoft",
-                Email = "microsoft@microsoft.com",
-                Discount = 10,
-                Can_Remove = false
-            },
-            new Customer
-            {
-                Id = Guid.NewGuid(),
-                name = "Google",
-                Email = "google@google.com",
-                Discount = 5,
-                Can_Remove = false
-            },
-            new Customer
-            {
-                Id = Guid.NewGuid(),
-                name = "Amazon",
-                Email = "amazon@amazon.com",
-                Discount = 0,
-                Can_Remove = true
-            }
-        };
     }
 }

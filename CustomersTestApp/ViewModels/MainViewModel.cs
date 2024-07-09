@@ -1,7 +1,11 @@
-﻿using System;
+﻿using CommunityToolkit.Mvvm.Messaging;
+using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Data;
 using System.Windows.Input;
 
 namespace CustomersTestApp.ViewModels
@@ -9,27 +13,43 @@ namespace CustomersTestApp.ViewModels
     public class MainViewModel : BaseViewModel
     {
         private readonly ICustomerService _customerService;
-        private ObservableCollection<Customer> _customers;
+        private readonly IMessenger _messenger;
+        private readonly ObservableCollection<Customer> _customers;
         private Customer _selectedCustomer;
+        private string _filterText;
+        private string _filterType;
+        private bool _isAddCustomerFormVisible;
+        private string _newCustomerName;
+        private string _newCustomerEmail;
+        private int _newCustomerDiscount;
 
-        public MainViewModel(ICustomerService customerService)
+        public MainViewModel(ICustomerService customerService, IMessenger messenger)
         {
             _customerService = customerService;
+            _messenger = messenger;
+            _customers = new ObservableCollection<Customer>();
+
+            CustomersCollectionView = CollectionViewSource.GetDefaultView(_customers);
+            CustomersCollectionView.Filter = FilterCustomers;
+
+            FilterType = "Name";
+            FilterText = string.Empty;
+
             LoadCustomersCommand = new RelayCommand(async () => await LoadCustomers());
+            ShowAddCustomerFormCommand = new RelayCommand(() => IsAddCustomerFormVisible = true);
+            HideAddCustomerFormCommand = new RelayCommand(() => IsAddCustomerFormVisible = false);
             AddCustomerCommand = new RelayCommand(async () => await AddCustomer());
-            RemoveCustomerCommand = new RelayCommand(async () => await RemoveCustomer());
+            RemoveCustomerCommand = new RelayCommand(() => OnRemoveCustomer(), CanRemoveCustomer); // Updated to call OnRemoveCustomer
             SaveCustomerCommand = new RelayCommand(async () => await SaveCustomer());
+
+            // Register to receive messages
+            _messenger.Register<RemoveCustomerMessage>(this, (r, m) => RemoveCustomerById(m.CustomerId));
+
+            // Load customers on initialization
+            LoadCustomersCommand.Execute(null);
         }
 
-        public ObservableCollection<Customer> Customers
-        {
-            get => _customers;
-            set
-            {
-                _customers = value;
-                OnPropertyChanged(nameof(Customers));
-            }
-        }
+        public ICollectionView CustomersCollectionView { get; }
 
         public Customer SelectedCustomer
         {
@@ -38,10 +58,75 @@ namespace CustomersTestApp.ViewModels
             {
                 _selectedCustomer = value;
                 OnPropertyChanged(nameof(SelectedCustomer));
+                ((RelayCommand)RemoveCustomerCommand).RaiseCanExecuteChanged();
+            }
+        }
+
+        public string FilterText
+        {
+            get => _filterText;
+            set
+            {
+                _filterText = value;
+                OnPropertyChanged(nameof(FilterText));
+                CustomersCollectionView.Refresh();
+            }
+        }
+
+        public string FilterType
+        {
+            get => _filterType;
+            set
+            {
+                _filterType = value;
+                OnPropertyChanged(nameof(FilterType));
+                CustomersCollectionView.Refresh();
+            }
+        }
+
+        public bool IsAddCustomerFormVisible
+        {
+            get => _isAddCustomerFormVisible;
+            set
+            {
+                _isAddCustomerFormVisible = value;
+                OnPropertyChanged(nameof(IsAddCustomerFormVisible));
+            }
+        }
+
+        public string NewCustomerName
+        {
+            get => _newCustomerName;
+            set
+            {
+                _newCustomerName = value;
+                OnPropertyChanged(nameof(NewCustomerName));
+            }
+        }
+
+        public string NewCustomerEmail
+        {
+            get => _newCustomerEmail;
+            set
+            {
+                _newCustomerEmail = value;
+                OnPropertyChanged(nameof(NewCustomerEmail));
+            }
+        }
+
+        public int NewCustomerDiscount
+        {
+            get => _newCustomerDiscount;
+            set
+            {
+                _newCustomerDiscount = value;
+                OnPropertyChanged(nameof(NewCustomerDiscount));
             }
         }
 
         public ICommand LoadCustomersCommand { get; }
+        public ICommand ShowAddCustomerFormCommand { get; }
+        public ICommand HideAddCustomerFormCommand { get; }
         public ICommand AddCustomerCommand { get; }
         public ICommand RemoveCustomerCommand { get; }
         public ICommand SaveCustomerCommand { get; }
@@ -55,7 +140,10 @@ namespace CustomersTestApp.ViewModels
                 customers.Add(customer);
             }
 
-            Customers = customers;
+            foreach (var customer in customers)
+            {
+                _customers.Add(customer);
+            }
         }
 
         private async Task AddCustomer()
@@ -63,29 +151,40 @@ namespace CustomersTestApp.ViewModels
             var newCustomer = new Customer
             {
                 Id = Guid.NewGuid(),
-                name = "New Customer",
-                Email = "new.customer@example.com",
-                Discount = 5,
-                Can_Remove = true
+                Name = NewCustomerName,
+                Email = NewCustomerEmail,
+                Discount = NewCustomerDiscount,
+                CanRemove = true
             };
 
             var success = await _customerService.AddCustomer(newCustomer);
             if (success)
             {
-                Customers.Add(newCustomer);
+                _customers.Add(newCustomer);
+                CustomersCollectionView.Refresh();
+                IsAddCustomerFormVisible = false;
+                NewCustomerName = string.Empty;
+                NewCustomerEmail = string.Empty;
+                NewCustomerDiscount = 0;
             }
         }
 
         private async Task RemoveCustomer()
         {
-            if (SelectedCustomer != null && SelectedCustomer.Can_Remove)
+            if (SelectedCustomer != null && SelectedCustomer.CanRemove)
             {
                 var success = await _customerService.DeleteCustomer(SelectedCustomer.Id);
                 if (success)
                 {
-                    Customers.Remove(SelectedCustomer);
+                    _customers.Remove(SelectedCustomer);
+                    CustomersCollectionView.Refresh();
                 }
             }
+        }
+
+        private bool CanRemoveCustomer()
+        {
+            return SelectedCustomer != null && SelectedCustomer.CanRemove;
         }
 
         private async Task SaveCustomer()
@@ -95,9 +194,46 @@ namespace CustomersTestApp.ViewModels
                 var success = await _customerService.UpdateCustomer(SelectedCustomer);
                 if (success)
                 {
-                    // Optionally, refresh the customer list
+                    CustomersCollectionView.Refresh();
                 }
             }
+        }
+
+        private void RemoveCustomerById(Guid customerId)
+        {
+            var customer = _customers.FirstOrDefault(c => c.Id == customerId);
+            if (customer != null && customer.CanRemove)
+            {
+                _customers.Remove(customer);
+                CustomersCollectionView.Refresh();
+            }
+        }
+
+        private void OnRemoveCustomer()
+        {
+            if (SelectedCustomer != null && SelectedCustomer.CanRemove)
+            {
+                _messenger.Send(new RemoveCustomerMessage(SelectedCustomer.Id));
+            }
+        }
+
+        private bool FilterCustomers(object obj)
+        {
+            if (obj is Customer customer)
+            {
+                if (string.IsNullOrEmpty(FilterText))
+                {
+                    return true;
+                }
+
+                return FilterType switch
+                {
+                    "Name" => customer.Name.Contains(FilterText, StringComparison.OrdinalIgnoreCase),
+                    "Email" => customer.Email.Contains(FilterText, StringComparison.OrdinalIgnoreCase),
+                    _ => true
+                };
+            }
+            return false;
         }
     }
 }

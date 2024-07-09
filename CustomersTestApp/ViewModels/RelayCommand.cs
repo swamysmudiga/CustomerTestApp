@@ -1,25 +1,50 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace CustomersTestApp.ViewModels
+public class RelayCommand : ICommand
 {
-    public class RelayCommand : ICommand
+    private readonly Func<Task> _executeAsync;
+    private readonly Action _execute;
+    private readonly Func<bool> _canExecute;
+
+    public RelayCommand(Func<Task> executeAsync, Func<bool> canExecute = null)
     {
-        private readonly Func<Task> _execute;
-        private readonly Func<bool> _canExecute;
+        _executeAsync = executeAsync ?? throw new ArgumentNullException(nameof(executeAsync));
+        _canExecute = canExecute;
+    }
 
-        public RelayCommand(Func<Task> execute, Func<bool> canExecute = null)
+    public RelayCommand(Action execute, Func<bool> canExecute = null)
+    {
+        _execute = execute ?? throw new ArgumentNullException(nameof(execute));
+        _canExecute = canExecute;
+    }
+
+    public bool CanExecute(object parameter)
+    {
+        return _canExecute == null || _canExecute();
+    }
+
+    public async void Execute(object parameter)
+    {
+        if (_executeAsync != null)
         {
-            _execute = execute;
-            _canExecute = canExecute;
+            await _executeAsync();
         }
+        else
+        {
+            _execute();
+        }
+    }
 
-        public event EventHandler CanExecuteChanged;
+    public event EventHandler CanExecuteChanged
+    {
+        add => CommandManager.RequerySuggested += value;
+        remove => CommandManager.RequerySuggested -= value;
+    }
 
-        public bool CanExecute(object parameter) => _canExecute == null || _canExecute();
-
-        public async void Execute(object parameter) => await _execute();
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+    public void RaiseCanExecuteChanged()
+    {
+        CommandManager.InvalidateRequerySuggested();
     }
 }

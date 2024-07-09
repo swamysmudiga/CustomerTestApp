@@ -1,5 +1,7 @@
 ﻿using System.Windows;
+using CustomersTestApp.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace CustomersTestApp
 {
@@ -20,7 +22,8 @@ namespace CustomersTestApp
         private void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<ICustomerService, Grpc_customerService>();
-            services.AddSingleton<ViewModels.MainViewModel>();
+            services.AddSingleton<IMessenger>(WeakReferenceMessenger.Default);
+            services.AddSingleton<MainViewModel>();
             services.AddSingleton<MainWindow>();
         }
     }
