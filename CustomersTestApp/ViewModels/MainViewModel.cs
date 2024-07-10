@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
+using CustomersTestApp.Messages;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -10,18 +11,19 @@ using System.Windows.Input;
 
 namespace CustomersTestApp.ViewModels
 {
-    public class MainViewModel : BaseViewModel
+    public class MainViewModel : BaseViewModel, IDataErrorInfo
     {
         private readonly ICustomerService _customerService;
         private readonly IMessenger _messenger;
         private readonly ObservableCollection<Customer> _customers;
         private Customer _selectedCustomer;
+        private Customer _editingCustomer;
         private string _filterText;
         private string _filterType;
         private bool _isAddCustomerFormVisible;
         private string _newCustomerName;
         private string _newCustomerEmail;
-        private int _newCustomerDiscount;
+        private int? _newCustomerDiscount;
 
         public MainViewModel(ICustomerService customerService, IMessenger messenger)
         {
@@ -38,15 +40,19 @@ namespace CustomersTestApp.ViewModels
             LoadCustomersCommand = new RelayCommand(async () => await LoadCustomers());
             ShowAddCustomerFormCommand = new RelayCommand(() => IsAddCustomerFormVisible = true);
             HideAddCustomerFormCommand = new RelayCommand(() => IsAddCustomerFormVisible = false);
-            AddCustomerCommand = new RelayCommand(async () => await AddCustomer());
-            RemoveCustomerCommand = new RelayCommand(() => OnRemoveCustomer(), CanRemoveCustomer); // Updated to call OnRemoveCustomer
-            SaveCustomerCommand = new RelayCommand(async () => await SaveCustomer());
+            AddCustomerCommand = new RelayCommand(async () => await AddCustomer(), CanAddOrSaveCustomer);
+            RemoveCustomerCommand = new RelayCommand(() => OnRemoveCustomer(), CanRemoveCustomer);
+            SaveCustomerCommand = new RelayCommand(async () => await SaveCustomer(), CanAddOrSaveCustomer);
+            CloseCustomerFormCommand = new RelayCommand(() => SelectedCustomer = null);
 
             // Register to receive messages
             _messenger.Register<RemoveCustomerMessage>(this, (r, m) => RemoveCustomerById(m.CustomerId));
 
             // Load customers on initialization
             LoadCustomersCommand.Execute(null);
+
+            // Set default value for new customer discount
+            NewCustomerDiscount = 0;
         }
 
         public ICollectionView CustomersCollectionView { get; }
@@ -58,7 +64,31 @@ namespace CustomersTestApp.ViewModels
             {
                 _selectedCustomer = value;
                 OnPropertyChanged(nameof(SelectedCustomer));
+                OnPropertyChanged(nameof(IsCustomerSelected)); // Notify that IsCustomerSelected has changed
                 ((RelayCommand)RemoveCustomerCommand).RaiseCanExecuteChanged();
+
+                // Create a copy of the selected customer for editing
+                EditingCustomer = _selectedCustomer != null ? new Customer
+                {
+                    Id = _selectedCustomer.Id,
+                    Name = _selectedCustomer.Name,
+                    Email = _selectedCustomer.Email,
+                    Discount = _selectedCustomer.Discount,
+                    CanRemove = _selectedCustomer.CanRemove
+                } : null;
+
+                ((RelayCommand)SaveCustomerCommand).RaiseCanExecuteChanged();
+            }
+        }
+
+        public Customer EditingCustomer
+        {
+            get => _editingCustomer;
+            set
+            {
+                _editingCustomer = value;
+                OnPropertyChanged(nameof(EditingCustomer));
+                ((RelayCommand)SaveCustomerCommand).RaiseCanExecuteChanged();
             }
         }
 
@@ -91,8 +121,11 @@ namespace CustomersTestApp.ViewModels
             {
                 _isAddCustomerFormVisible = value;
                 OnPropertyChanged(nameof(IsAddCustomerFormVisible));
+                ((RelayCommand)AddCustomerCommand).RaiseCanExecuteChanged();
             }
         }
+
+        public bool IsCustomerSelected => SelectedCustomer != null; // Property to indicate if a customer is selected
 
         public string NewCustomerName
         {
@@ -101,6 +134,7 @@ namespace CustomersTestApp.ViewModels
             {
                 _newCustomerName = value;
                 OnPropertyChanged(nameof(NewCustomerName));
+                ((RelayCommand)AddCustomerCommand).RaiseCanExecuteChanged();
             }
         }
 
@@ -111,16 +145,18 @@ namespace CustomersTestApp.ViewModels
             {
                 _newCustomerEmail = value;
                 OnPropertyChanged(nameof(NewCustomerEmail));
+                ((RelayCommand)AddCustomerCommand).RaiseCanExecuteChanged();
             }
         }
 
-        public int NewCustomerDiscount
+        public int? NewCustomerDiscount
         {
             get => _newCustomerDiscount;
             set
             {
                 _newCustomerDiscount = value;
                 OnPropertyChanged(nameof(NewCustomerDiscount));
+                ((RelayCommand)AddCustomerCommand).RaiseCanExecuteChanged();
             }
         }
 
@@ -130,6 +166,7 @@ namespace CustomersTestApp.ViewModels
         public ICommand AddCustomerCommand { get; }
         public ICommand RemoveCustomerCommand { get; }
         public ICommand SaveCustomerCommand { get; }
+        public ICommand CloseCustomerFormCommand { get; } // Added command to close the form
 
         private async Task LoadCustomers()
         {
@@ -153,7 +190,7 @@ namespace CustomersTestApp.ViewModels
                 Id = Guid.NewGuid(),
                 Name = NewCustomerName,
                 Email = NewCustomerEmail,
-                Discount = NewCustomerDiscount,
+                Discount = NewCustomerDiscount ?? 0,
                 CanRemove = true
             };
 
@@ -169,16 +206,11 @@ namespace CustomersTestApp.ViewModels
             }
         }
 
-        private async Task RemoveCustomer()
+        private void OnRemoveCustomer()
         {
             if (SelectedCustomer != null && SelectedCustomer.CanRemove)
             {
-                var success = await _customerService.DeleteCustomer(SelectedCustomer.Id);
-                if (success)
-                {
-                    _customers.Remove(SelectedCustomer);
-                    CustomersCollectionView.Refresh();
-                }
+                _messenger.Send(new RemoveCustomerMessage(SelectedCustomer.Id));
             }
         }
 
@@ -189,14 +221,36 @@ namespace CustomersTestApp.ViewModels
 
         private async Task SaveCustomer()
         {
-            if (SelectedCustomer != null)
+            if (EditingCustomer != null)
             {
+                // Update the original SelectedCustomer with the values from EditingCustomer
+                SelectedCustomer.Name = EditingCustomer.Name;
+                SelectedCustomer.Email = EditingCustomer.Email;
+                SelectedCustomer.Discount = EditingCustomer.Discount;
+
                 var success = await _customerService.UpdateCustomer(SelectedCustomer);
                 if (success)
                 {
                     CustomersCollectionView.Refresh();
                 }
             }
+        }
+
+        private bool CanAddOrSaveCustomer()
+        {
+            if (IsAddCustomerFormVisible)
+            {
+                return IsValidCustomer(new Customer { Name = NewCustomerName, Email = NewCustomerEmail, Discount = NewCustomerDiscount ?? 0 });
+            }
+            return IsValidCustomer(EditingCustomer);
+        }
+
+        private bool IsValidCustomer(Customer customer)
+        {
+            return customer != null &&
+                   !string.IsNullOrWhiteSpace(customer.Name) &&
+                   !string.IsNullOrWhiteSpace(customer.Email) &&
+                   customer.Discount >= 0 && customer.Discount <= 30;
         }
 
         private void RemoveCustomerById(Guid customerId)
@@ -206,14 +260,6 @@ namespace CustomersTestApp.ViewModels
             {
                 _customers.Remove(customer);
                 CustomersCollectionView.Refresh();
-            }
-        }
-
-        private void OnRemoveCustomer()
-        {
-            if (SelectedCustomer != null && SelectedCustomer.CanRemove)
-            {
-                _messenger.Send(new RemoveCustomerMessage(SelectedCustomer.Id));
             }
         }
 
@@ -235,5 +281,67 @@ namespace CustomersTestApp.ViewModels
             }
             return false;
         }
+
+        // IDataErrorInfo implementation
+        public string this[string columnName]
+        {
+            get
+            {
+                string result = string.Empty;
+
+                switch (columnName)
+                {
+                    case nameof(EditingCustomer.Name):
+                        if (string.IsNullOrWhiteSpace(EditingCustomer?.Name))
+                        {
+                            result = "Name cannot be empty";
+                        }
+                        break;
+
+                    case nameof(EditingCustomer.Email):
+                        if (string.IsNullOrWhiteSpace(EditingCustomer?.Email))
+                        {
+                            result = "Email cannot be empty";
+                        }
+                        break;
+
+                    case nameof(EditingCustomer.Discount):
+                        if (EditingCustomer?.Discount < 0 || EditingCustomer?.Discount > 30)
+                        {
+                            result = "Discount must be between 0 and 30";
+                        }
+                        break;
+
+                    case nameof(NewCustomerName):
+                        if (string.IsNullOrWhiteSpace(NewCustomerName))
+                        {
+                            result = "Name cannot be empty";
+                        }
+                        break;
+
+                    case nameof(NewCustomerEmail):
+                        if (string.IsNullOrWhiteSpace(NewCustomerEmail))
+                        {
+                            result = "Email cannot be empty";
+                        }
+                        break;
+
+                    case nameof(NewCustomerDiscount):
+                        if (NewCustomerDiscount < 0 || NewCustomerDiscount > 30)
+                        {
+                            result = "Discount must be between 0 and 30";
+                        }
+                        else if (NewCustomerDiscount == null)
+                        {
+                            result = "Discount cannot be null";
+                        }
+                        break;
+                }
+
+                return result;
+            }
+        }
+
+        public string Error => null;
     }
 }

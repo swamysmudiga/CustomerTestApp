@@ -1,9 +1,12 @@
-﻿public class RemoveCustomerMessage
+﻿namespace CustomersTestApp.Messages
 {
-    public Guid CustomerId { get; }
-
-    public RemoveCustomerMessage(Guid customerId)
+    public class RemoveCustomerMessage
     {
-        CustomerId = customerId;
+        public Guid CustomerId { get; }
+
+        public RemoveCustomerMessage(Guid customerId)
+        {
+            CustomerId = customerId;
+        }
     }
 }
