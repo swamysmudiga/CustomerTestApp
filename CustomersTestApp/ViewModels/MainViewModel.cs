@@ -48,7 +48,11 @@ namespace CustomersTestApp.ViewModels
             AddCustomerCommand = new RelayCommand(async () => await AddCustomer(), CanAddOrSaveCustomer);
             RemoveCustomerCommand = new RelayCommand(() => OnRemoveCustomer(), CanRemoveCustomer);
             SaveCustomerCommand = new RelayCommand(async () => await SaveCustomer(), CanAddOrSaveCustomer);
-            CloseCustomerFormCommand = new RelayCommand(() => SelectedCustomer = null);
+            CloseCustomerFormCommand = new RelayCommand(() =>
+            {
+                SelectedCustomer = null;
+                IsAddCustomerFormVisible = false;
+            });
 
             // Register to receive messages
             _messenger.Register<RemoveCustomerMessage>(this, (r, m) => RemoveCustomerById(m.CustomerId));
@@ -83,6 +87,9 @@ namespace CustomersTestApp.ViewModels
                 } : null;
 
                 ((RelayCommand)SaveCustomerCommand).RaiseCanExecuteChanged();
+
+                // Hide Add Customer Form when a customer is selected
+                IsAddCustomerFormVisible = _selectedCustomer == null;
             }
         }
 
