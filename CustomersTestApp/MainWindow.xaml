@@ -39,7 +39,7 @@
                         <Button Content="Remove" 
                                 Command="{Binding DataContext.RemoveCustomerCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" 
                                 CommandParameter="{Binding}" 
-                                IsEnabled="{Binding CanRemove}" />
+                                IsEnabled="{Binding CanRemove}"  Width="166"/>
                     </StackPanel>
                 </DataTemplate>
             </ListBox.ItemTemplate>

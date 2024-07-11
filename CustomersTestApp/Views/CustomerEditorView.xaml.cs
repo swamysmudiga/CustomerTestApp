@@ -1,24 +1,25 @@
 ﻿using System.Text.RegularExpressions;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
-namespace CustomersTestApp.Views;
-
-public partial class CustomerEditorView : UserControl
+namespace CustomersTestApp.Views
 {
-    public CustomerEditorView()
+    public partial class CustomerEditorView : UserControl
     {
-        InitializeComponent();
-    }
+        public CustomerEditorView()
+        {
+            InitializeComponent();
+        }
 
-    private void OnClick(object sender, RoutedEventArgs e)
-    {
-        throw new NotImplementedException();
-    }
-    private void NumericOnly(object sender, TextCompositionEventArgs e)
-    {
-        Regex regex = new Regex("[^0-9]+"); // Regex that matches disallowed text
-        e.Handled = regex.IsMatch(e.Text);
+        private void NumericTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !IsTextNumeric(e.Text);
+        }
+
+        private static bool IsTextNumeric(string text)
+        {
+            Regex regex = new Regex("[^0-9]+"); // Regex that matches non-numeric text
+            return !regex.IsMatch(text);
+        }
     }
 }

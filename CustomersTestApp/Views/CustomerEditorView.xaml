@@ -33,10 +33,15 @@
 
         <ControlTemplate x:Key="validationTemplate">
             <DockPanel>
-                <TextBlock Foreground="Red" DockPanel.Dock="Right" Margin="5,0,0,0" Text="{Binding ElementName=customAdorner, Path=AdornedElement.(Validation.Errors)[0].ErrorContent}"/>
+                <TextBlock Foreground="Red" DockPanel.Dock="Right" Margin="5,0,0,0" 
+                           Text="{Binding ElementName=customAdorner, Path=AdornedElement.(Validation.Errors)[0].ErrorContent}"/>
                 <AdornedElementPlaceholder x:Name="customAdorner"/>
             </DockPanel>
         </ControlTemplate>
+
+        <Style x:Key="NumericTextBoxStyle" TargetType="TextBox">
+            <EventSetter Event="PreviewTextInput" Handler="NumericTextBox_PreviewTextInput"/>
+        </Style>
     </UserControl.Resources>
 
     <StackPanel>
@@ -54,15 +59,15 @@
             <TextBox Text="{Binding Discount, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, TargetNullValue='', FallbackValue=0}"
                      Validation.ErrorTemplate="{StaticResource validationTemplate}"
                      Width="200"
-                     PreviewTextInput="NumericOnly"/>
+                     Style="{StaticResource NumericTextBoxStyle}"/>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
             <TextBlock Text="ID:" Width="60" VerticalAlignment="Center"/>
             <TextBox Text="{Binding Id}" IsReadOnly="True" Width="200"/>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
-            <Button Content="Save" HorizontalAlignment="Left" Command="{Binding DataContext.SaveCustomerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="10,10,100,10" Width="167" />
-            <Button Content="Cancel" Command="{Binding DataContext.CloseCustomerFormCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="10,10,100,10" Width="166" />
+            <Button Content="Save" HorizontalAlignment="Left" Command="{Binding DataContext.SaveCustomerCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Margin="10,10,100,10" Width="167" />
+            <Button Content="Cancel" HorizontalAlignment="Left" Command="{Binding DataContext.CloseCustomerFormCommand, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Margin="10,10,100,10" Width="166" />
         </StackPanel>
     </StackPanel>
 </UserControl>

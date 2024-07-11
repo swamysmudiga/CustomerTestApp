@@ -175,14 +175,7 @@ namespace CustomersTestApp.ViewModels
 
         private async Task LoadCustomers()
         {
-            var customers = new ObservableCollection<Customer>();
-
             await foreach (var customer in _customerService.GetCustomers(CancellationToken.None))
-            {
-                customers.Add(customer);
-            }
-
-            foreach (var customer in customers)
             {
                 _customers.Add(customer);
             }
