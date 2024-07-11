@@ -3,11 +3,42 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:CustomersTestApp.ViewModels">
     <UserControl.Resources>
-        <Style x:Key="NumericTextBoxStyle" TargetType="TextBox">
-            <EventSetter Event="PreviewTextInput" Handler="NumericTextBox_PreviewTextInput"/>
+        <Style x:Key="WatermarkTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Grid>
+                            <TextBox x:Name="textBox" Text="{TemplateBinding Text}" />
+                            <TextBlock x:Name="watermark"
+                                       Text=""
+                                       IsHitTestVisible="False"
+                                       Foreground="Gray"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Left"
+                                       Margin="5,0,0,0"
+                                       Visibility="Collapsed" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="watermark" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="watermark" Property="Visibility" Value="Collapsed" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
-        <!-- Define validationTemplate here -->
+
+        <ControlTemplate x:Key="validationTemplate">
+            <DockPanel>
+                <TextBlock Foreground="Red" DockPanel.Dock="Right" Margin="5,0,0,0" Text="{Binding ElementName=customAdorner, Path=AdornedElement.(Validation.Errors)[0].ErrorContent}"/>
+                <AdornedElementPlaceholder x:Name="customAdorner"/>
+            </DockPanel>
+        </ControlTemplate>
     </UserControl.Resources>
+
     <StackPanel>
         <TextBlock Text="Customer Details" FontWeight="Bold" Margin="0,0,0,10"/>
         <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
@@ -23,7 +54,7 @@
             <TextBox Text="{Binding Discount, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, TargetNullValue='', FallbackValue=0}"
                      Validation.ErrorTemplate="{StaticResource validationTemplate}"
                      Width="200"
-                     Style="{StaticResource NumericTextBoxStyle}"/>
+                     PreviewTextInput="NumericOnly"/>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
             <TextBlock Text="ID:" Width="60" VerticalAlignment="Center"/>
@@ -31,7 +62,7 @@
         </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
             <Button Content="Save" HorizontalAlignment="Left" Command="{Binding DataContext.SaveCustomerCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="10,10,100,10" Width="167" />
-            <Button Content="Cancel" HorizontalAlignment="Left" Command="{Binding DataContext.HideAddCustomerFormCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="10,10,100,10" Width="166" />
+            <Button Content="Cancel" Command="{Binding DataContext.CloseCustomerFormCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="10,10,100,10" Width="166" />
         </StackPanel>
     </StackPanel>
 </UserControl>

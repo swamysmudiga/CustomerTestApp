@@ -9,7 +9,6 @@
         <DataTemplate x:Key="EmptyTemplate">
             <views:EmptyView />
         </DataTemplate>
-        <!-- Define your validationTemplate and other resources here -->
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -85,7 +84,7 @@
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
                     <Button Content="Save" HorizontalAlignment="Left" Command="{Binding AddCustomerCommand}" Margin="10,10,100,10" Width="167" />
-                    <Button Content="Cancel" HorizontalAlignment="Left" Command="{Binding HideAddCustomerFormCommand}" Margin="10,10,100,10" Width="166" />
+                    <Button Content="Cancel" Command="{Binding HideAddCustomerFormCommand}" Margin="10,10,100,10" Width="166" />
                 </StackPanel>
             </StackPanel>
         </StackPanel>
