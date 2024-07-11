@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using CustomersTestApp.Messages;
+using CustomersTestApp;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -11,7 +12,7 @@ using System.Windows.Input;
 
 namespace CustomersTestApp.ViewModels
 {
-    public class MainViewModel : BaseViewModel, IDataErrorInfo
+    public class MainViewModel : BaseViewModel
     {
         private readonly ICustomerService _customerService;
         private readonly IMessenger _messenger;
@@ -20,10 +21,10 @@ namespace CustomersTestApp.ViewModels
         private Customer _editingCustomer;
         private string _filterText;
         private string _filterType;
-        private bool _isAddCustomerFormVisible;
         private string _newCustomerName;
         private string _newCustomerEmail;
         private int? _newCustomerDiscount;
+        private bool _isAddCustomerFormVisible;
 
         public MainViewModel(ICustomerService customerService, IMessenger messenger)
         {
@@ -38,7 +39,11 @@ namespace CustomersTestApp.ViewModels
             FilterText = string.Empty;
 
             LoadCustomersCommand = new RelayCommand(async () => await LoadCustomers());
-            ShowAddCustomerFormCommand = new RelayCommand(() => IsAddCustomerFormVisible = true);
+            ShowAddCustomerFormCommand = new RelayCommand(() =>
+            {
+                IsAddCustomerFormVisible = true;
+                SelectedCustomer = null;
+            });
             HideAddCustomerFormCommand = new RelayCommand(() => IsAddCustomerFormVisible = false);
             AddCustomerCommand = new RelayCommand(async () => await AddCustomer(), CanAddOrSaveCustomer);
             RemoveCustomerCommand = new RelayCommand(() => OnRemoveCustomer(), CanRemoveCustomer);
@@ -125,7 +130,7 @@ namespace CustomersTestApp.ViewModels
             }
         }
 
-        public bool IsCustomerSelected => SelectedCustomer != null; // Property to indicate if a customer is selected
+        public bool IsCustomerSelected => SelectedCustomer != null;
 
         public string NewCustomerName
         {
@@ -166,7 +171,7 @@ namespace CustomersTestApp.ViewModels
         public ICommand AddCustomerCommand { get; }
         public ICommand RemoveCustomerCommand { get; }
         public ICommand SaveCustomerCommand { get; }
-        public ICommand CloseCustomerFormCommand { get; } // Added command to close the form
+        public ICommand CloseCustomerFormCommand { get; }
 
         private async Task LoadCustomers()
         {
@@ -281,67 +286,5 @@ namespace CustomersTestApp.ViewModels
             }
             return false;
         }
-
-        // IDataErrorInfo implementation
-        public string this[string columnName]
-        {
-            get
-            {
-                string result = string.Empty;
-
-                switch (columnName)
-                {
-                    case nameof(EditingCustomer.Name):
-                        if (string.IsNullOrWhiteSpace(EditingCustomer?.Name))
-                        {
-                            result = "Name cannot be empty";
-                        }
-                        break;
-
-                    case nameof(EditingCustomer.Email):
-                        if (string.IsNullOrWhiteSpace(EditingCustomer?.Email))
-                        {
-                            result = "Email cannot be empty";
-                        }
-                        break;
-
-                    case nameof(EditingCustomer.Discount):
-                        if (EditingCustomer?.Discount < 0 || EditingCustomer?.Discount > 30)
-                        {
-                            result = "Discount must be between 0 and 30";
-                        }
-                        break;
-
-                    case nameof(NewCustomerName):
-                        if (string.IsNullOrWhiteSpace(NewCustomerName))
-                        {
-                            result = "Name cannot be empty";
-                        }
-                        break;
-
-                    case nameof(NewCustomerEmail):
-                        if (string.IsNullOrWhiteSpace(NewCustomerEmail))
-                        {
-                            result = "Email cannot be empty";
-                        }
-                        break;
-
-                    case nameof(NewCustomerDiscount):
-                        if (NewCustomerDiscount < 0 || NewCustomerDiscount > 30)
-                        {
-                            result = "Discount must be between 0 and 30";
-                        }
-                        else if (NewCustomerDiscount == null)
-                        {
-                            result = "Discount cannot be null";
-                        }
-                        break;
-                }
-
-                return result;
-            }
-        }
-
-        public string Error => null;
     }
 }

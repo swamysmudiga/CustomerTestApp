@@ -6,62 +6,10 @@
         xmlns:views="clr-namespace:CustomersTestApp.Views"
         Title="Customer Editor" Height="600" Width="800">
     <Window.Resources>
-        <Style x:Key="WatermarkTextBoxStyle" TargetType="TextBox">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="TextBox">
-                        <Grid>
-                            <TextBox x:Name="textBox" Text="{TemplateBinding Text}" />
-                            <TextBlock x:Name="watermark"
-                                       Text="Filter text..."
-                                       IsHitTestVisible="False"
-                                       Foreground="Gray"
-                                       VerticalAlignment="Center"
-                                       HorizontalAlignment="Left"
-                                       Margin="5,0,0,0"
-                                       Visibility="Collapsed" />
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="Text" Value="">
-                                <Setter TargetName="watermark" Property="Visibility" Value="Visible" />
-                            </Trigger>
-                            <Trigger Property="IsKeyboardFocused" Value="True">
-                                <Setter TargetName="watermark" Property="Visibility" Value="Collapsed" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <ControlTemplate x:Key="validationTemplate">
-            <DockPanel>
-                <TextBlock Foreground="Red" DockPanel.Dock="Bottom" Margin="5,0,0,0" Text="{Binding ElementName=customAdorner, Path=AdornedElement.(Validation.Errors)[0].ErrorContent}"/>
-                <AdornedElementPlaceholder x:Name="customAdorner"/>
-            </DockPanel>
-        </ControlTemplate>
-
-        <DataTemplate x:Key="CustomerTemplate">
-            <StackPanel>
-                <TextBlock Text="Customer Details" FontWeight="Bold" Margin="0,0,0,10"/>
-                <TextBlock Text="Name:" />
-                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" Validation.ErrorTemplate="{StaticResource validationTemplate}" />
-                <TextBlock Text="Email:" />
-                <TextBox Text="{Binding Email, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" Validation.ErrorTemplate="{StaticResource validationTemplate}" />
-                <TextBlock Text="Discount:" />
-                <TextBox Text="{Binding Discount, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
-                         Validation.ErrorTemplate="{StaticResource validationTemplate}"
-                         PreviewTextInput="NumericOnly"/>
-                <TextBlock Text="ID:" />
-                <TextBox Text="{Binding Id}" IsReadOnly="True" />
-                <Button Content="Save" Command="{Binding DataContext.SaveCustomerCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
-                <Button Content="Close" Command="{Binding DataContext.CloseCustomerFormCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
-            </StackPanel>
-        </DataTemplate>
         <DataTemplate x:Key="EmptyTemplate">
             <views:EmptyView />
         </DataTemplate>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <!-- Define your validationTemplate and other resources here -->
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -75,10 +23,11 @@
 
         <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="10">
             <TextBox Width="200" Margin="0,0,10,0" Style="{StaticResource WatermarkTextBoxStyle}" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
-            <ComboBox Width="100" SelectedValue="{Binding FilterType, UpdateSourceTrigger=PropertyChanged}">
-                <ComboBoxItem Content="Name" />
+            <ComboBox Width="100" SelectedValue="{Binding FilterType, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content">
+                <ComboBoxItem Content="Name" IsSelected="True"/>
                 <ComboBoxItem Content="Email" />
             </ComboBox>
+            <Button Content="Add New Customer" Command="{Binding ShowAddCustomerFormCommand}" Margin="0,0,0,0" />
         </StackPanel>
 
         <ListBox Grid.Row="1" Grid.Column="0" ItemsSource="{Binding CustomersCollectionView}" SelectedItem="{Binding SelectedCustomer}">
@@ -87,7 +36,7 @@
                     <StackPanel>
                         <TextBlock Text="{Binding Name}" />
                         <TextBlock Text="{Binding Email}" />
-                        <TextBlock Text="{Binding Discount}" />
+                        <TextBlock Text="{Binding Discount, StringFormat='{}{0}%'}" />
                         <Button Content="Remove" 
                                 Command="{Binding DataContext.RemoveCustomerCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" 
                                 CommandParameter="{Binding}" 
@@ -98,25 +47,16 @@
         </ListBox>
 
         <StackPanel Grid.Row="1" Grid.Column="1">
-            <Button Content="Add New Customer" Command="{Binding ShowAddCustomerFormCommand}" Margin="0,10,0,0">
-                <Button.Style>
-                    <Style TargetType="Button">
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsCustomerSelected}" Value="True">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding IsCustomerSelected}" Value="False">
-                                <Setter Property="Visibility" Value="Visible"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Button.Style>
-            </Button>
-
             <ContentControl Content="{Binding EditingCustomer}">
                 <ContentControl.Style>
                     <Style TargetType="ContentControl">
-                        <Setter Property="ContentTemplate" Value="{StaticResource CustomerTemplate}" />
+                        <Setter Property="ContentTemplate">
+                            <Setter.Value>
+                                <DataTemplate>
+                                    <views:CustomerEditorView />
+                                </DataTemplate>
+                            </Setter.Value>
+                        </Setter>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding EditingCustomer}" Value="{x:Null}">
                                 <Setter Property="ContentTemplate" Value="{StaticResource EmptyTemplate}" />
@@ -127,17 +67,26 @@
             </ContentControl>
 
             <StackPanel Visibility="{Binding IsAddCustomerFormVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <TextBlock Text="New Customer Details" FontWeight="Bold" Margin="0,0,0,10"/>
-                <TextBlock Text="Name:" />
-                <TextBox Text="{Binding NewCustomerName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" Validation.ErrorTemplate="{StaticResource validationTemplate}" />
-                <TextBlock Text="Email:" />
-                <TextBox Text="{Binding NewCustomerEmail, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" Validation.ErrorTemplate="{StaticResource validationTemplate}" />
-                <TextBlock Text="Discount:" />
-                <TextBox Text="{Binding NewCustomerDiscount, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}"
-                         Validation.ErrorTemplate="{StaticResource validationTemplate}"
-                         PreviewTextInput="NumericOnly"/>
-                <Button Content="Save" Command="{Binding AddCustomerCommand}" Margin="10,0,0,0" />
-                <Button Content="Cancel" Command="{Binding HideAddCustomerFormCommand}" Margin="10,0,0,0" />
+                <TextBlock Text="New Customer Details" HorizontalAlignment="Center" FontWeight="Bold" Margin="0,0,0,10"/>
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                    <TextBlock Text="Name:" Width="60" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding NewCustomerName, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" Validation.ErrorTemplate="{StaticResource validationTemplate}" Width="200"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                    <TextBlock Text="Email:" Width="60" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding NewCustomerEmail, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" Validation.ErrorTemplate="{StaticResource validationTemplate}" Width="200"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                    <TextBlock Text="Discount:" Width="60" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding NewCustomerDiscount, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, TargetNullValue='', FallbackValue=0}"
+                             Validation.ErrorTemplate="{StaticResource validationTemplate}"
+                             Width="200"
+                             PreviewTextInput="NumericOnly"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                    <Button Content="Save" HorizontalAlignment="Left" Command="{Binding AddCustomerCommand}" Margin="10,10,100,10" Width="167" />
+                    <Button Content="Cancel" HorizontalAlignment="Left" Command="{Binding HideAddCustomerFormCommand}" Margin="10,10,100,10" Width="166" />
+                </StackPanel>
             </StackPanel>
         </StackPanel>
     </Grid>

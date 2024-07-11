@@ -30,7 +30,7 @@ namespace CustomersTestApp
                     Id = customer.Id.ToString(),
                     Name = customer.Name,
                     Email = customer.Email,
-                    Discount = customer.Discount,
+                    Discount = (int)customer.Discount,
                     CanRemove = customer.CanRemove
                 }
             };
@@ -48,7 +48,7 @@ namespace CustomersTestApp
                     Id = customer.Id.ToString(),
                     Name = customer.Name,
                     Email = customer.Email,
-                    Discount = customer.Discount,
+                    Discount = (int)customer.Discount,
                     CanRemove = customer.CanRemove
                 }
             };

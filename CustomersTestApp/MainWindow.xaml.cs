@@ -1,8 +1,9 @@
-﻿using CustomersTestApp.ViewModels;
-using Microsoft.Extensions.DependencyInjection;
-using System.Text.RegularExpressions;
-using System.Windows;
+﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Text.RegularExpressions;
+using CustomersTestApp.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CustomersTestApp
 {
@@ -16,13 +17,28 @@ namespace CustomersTestApp
 
         private void NumericOnly(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !IsTextNumeric(e.Text);
+            Regex regex = new Regex("[^0-9]+"); // Regex that matches disallowed text
+            e.Handled = regex.IsMatch(e.Text);
         }
 
-        private static bool IsTextNumeric(string text)
+        private void Discount_LostFocus(object sender, RoutedEventArgs e)
         {
-            Regex regex = new Regex("[^0-9]+"); // regex that matches disallowed text
-            return !regex.IsMatch(text);
+            if (sender is TextBox textBox)
+            {
+                if (string.IsNullOrWhiteSpace(textBox.Text))
+                {
+                    textBox.Text = "0";
+                }
+
+                if (int.TryParse(textBox.Text, out int discount))
+                {
+                    if (discount < 0 || discount > 30)
+                    {
+                        MessageBox.Show("Discount should be between 0 to 30", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        textBox.Text = "0"; // Reset to a valid value
+                    }
+                }
+            }
         }
     }
 }
