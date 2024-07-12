@@ -1,5 +1,6 @@
-﻿using System.ComponentModel;
-using System.Windows.Input;
+﻿using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace CustomersTestApp.ViewModels
 {
@@ -17,6 +18,7 @@ namespace CustomersTestApp.ViewModels
                 OnPropertyChanged(nameof(Name));
                 OnPropertyChanged(nameof(Email));
                 OnPropertyChanged(nameof(Discount));
+                OnPropertyChanged(nameof(Id));
             }
         }
 
@@ -28,7 +30,7 @@ namespace CustomersTestApp.ViewModels
                 if (EditingCustomer != null)
                 {
                     EditingCustomer.Name = value;
-                    OnPropertyChanged(nameof(Name));
+                    OnPropertyChanged();
                 }
             }
         }
@@ -41,7 +43,7 @@ namespace CustomersTestApp.ViewModels
                 if (EditingCustomer != null)
                 {
                     EditingCustomer.Email = value;
-                    OnPropertyChanged(nameof(Email));
+                    OnPropertyChanged();
                 }
             }
         }
@@ -54,9 +56,14 @@ namespace CustomersTestApp.ViewModels
                 if (EditingCustomer != null)
                 {
                     EditingCustomer.Discount = value ?? 0;
-                    OnPropertyChanged(nameof(Discount));
+                    OnPropertyChanged();
                 }
             }
+        }
+
+        public Guid Id
+        {
+            get => EditingCustomer?.Id ?? Guid.Empty;
         }
 
         // IDataErrorInfo implementation
@@ -81,7 +88,11 @@ namespace CustomersTestApp.ViewModels
                         }
                         break;
                     case nameof(Discount):
-                        if (Discount < 0 || Discount > 30)
+                        if (Discount == null)
+                        {
+                            result = "Discount cannot be null.";
+                        }
+                        else if (Discount < 0 || Discount > 30)
                         {
                             result = "Discount must be between 0 and 30.";
                         }

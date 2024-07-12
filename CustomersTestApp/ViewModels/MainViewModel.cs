@@ -12,7 +12,7 @@ using System.Windows.Input;
 
 namespace CustomersTestApp.ViewModels
 {
-    public class MainViewModel : BaseViewModel
+    public class MainViewModel : BaseViewModel, IDataErrorInfo
     {
         private readonly ICustomerService _customerService;
         private readonly IMessenger _messenger;
@@ -25,13 +25,11 @@ namespace CustomersTestApp.ViewModels
         private int? _newCustomerDiscount;
         private bool _isAddCustomerFormVisible;
 
-
         public MainViewModel(ICustomerService customerService, IMessenger messenger)
         {
             _customerService = customerService;
             _messenger = messenger;
             _customers = new ObservableCollection<Customer>();
-            CustomerEditorViewModel = new CustomerEditorViewModel();
 
             CustomersCollectionView = CollectionViewSource.GetDefaultView(_customers);
             CustomersCollectionView.Filter = FilterCustomers;
@@ -63,6 +61,8 @@ namespace CustomersTestApp.ViewModels
 
             // Set default value for new customer discount
             NewCustomerDiscount = 0;
+
+            CustomerEditorViewModel = new CustomerEditorViewModel();
         }
 
         public CustomerEditorViewModel CustomerEditorViewModel { get; }
@@ -79,7 +79,7 @@ namespace CustomersTestApp.ViewModels
                 OnPropertyChanged(nameof(IsCustomerSelected)); // Notify that IsCustomerSelected has changed
                 ((RelayCommand)RemoveCustomerCommand).RaiseCanExecuteChanged();
 
-                // Update the CustomerEditorViewModel with the selected customer for editing
+                // Set the editing customer in the CustomerEditorViewModel
                 CustomerEditorViewModel.EditingCustomer = _selectedCustomer != null ? new Customer
                 {
                     Id = _selectedCustomer.Id,
@@ -158,7 +158,7 @@ namespace CustomersTestApp.ViewModels
             get => _newCustomerDiscount;
             set
             {
-                _newCustomerDiscount = value;
+                _newCustomerDiscount = value ?? 0;
                 OnPropertyChanged(nameof(NewCustomerDiscount));
                 ((RelayCommand)AddCustomerCommand).RaiseCanExecuteChanged();
             }
@@ -278,5 +278,44 @@ namespace CustomersTestApp.ViewModels
             }
             return false;
         }
+
+        // IDataErrorInfo implementation for new customer
+        public string this[string columnName]
+        {
+            get
+            {
+                string result = null;
+
+                switch (columnName)
+                {
+                    case nameof(NewCustomerName):
+                        if (string.IsNullOrWhiteSpace(NewCustomerName))
+                        {
+                            result = "Name cannot be empty.";
+                        }
+                        break;
+                    case nameof(NewCustomerEmail):
+                        if (string.IsNullOrWhiteSpace(NewCustomerEmail))
+                        {
+                            result = "Email cannot be empty.";
+                        }
+                        break;
+                    case nameof(NewCustomerDiscount):
+                        if (NewCustomerDiscount == null)
+                        {
+                            result = "Discount cannot be null.";
+                        }
+                        else if (NewCustomerDiscount < 0 || NewCustomerDiscount > 30)
+                        {
+                            result = "Discount must be between 0 and 30.";
+                        }
+                        break;
+                }
+
+                return result;
+            }
+        }
+
+        public string Error => null;
     }
 }

@@ -91,6 +91,7 @@
                     <TextBox Text="{Binding NewCustomerEmail, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True}" Validation.ErrorTemplate="{StaticResource validationTemplate}" Width="200"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
+                    
                     <TextBlock Text="Discount:" Width="60" VerticalAlignment="Center"/>
                     <TextBox Text="{Binding NewCustomerDiscount, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, TargetNullValue='', FallbackValue=0}"
                              Validation.ErrorTemplate="{StaticResource validationTemplate}"
