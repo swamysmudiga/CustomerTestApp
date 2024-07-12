@@ -1,4 +1,5 @@
 ﻿using System.Text.RegularExpressions;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -16,10 +17,9 @@ namespace CustomersTestApp.Views
             e.Handled = !IsTextNumeric(e.Text);
         }
 
-        private static bool IsTextNumeric(string text)
+        private static bool IsTextNumeric(string str)
         {
-            Regex regex = new Regex("[^0-9]+"); // Regex that matches non-numeric text
-            return !regex.IsMatch(text);
+            return Regex.IsMatch(str, @"^\d+$");
         }
     }
 }

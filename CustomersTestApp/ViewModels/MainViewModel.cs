@@ -18,7 +18,6 @@ namespace CustomersTestApp.ViewModels
         private readonly IMessenger _messenger;
         private readonly ObservableCollection<Customer> _customers;
         private Customer _selectedCustomer;
-        private Customer _editingCustomer;
         private string _filterText;
         private string _filterType;
         private string _newCustomerName;
@@ -26,11 +25,13 @@ namespace CustomersTestApp.ViewModels
         private int? _newCustomerDiscount;
         private bool _isAddCustomerFormVisible;
 
+
         public MainViewModel(ICustomerService customerService, IMessenger messenger)
         {
             _customerService = customerService;
             _messenger = messenger;
             _customers = new ObservableCollection<Customer>();
+            CustomerEditorViewModel = new CustomerEditorViewModel();
 
             CustomersCollectionView = CollectionViewSource.GetDefaultView(_customers);
             CustomersCollectionView.Filter = FilterCustomers;
@@ -64,6 +65,8 @@ namespace CustomersTestApp.ViewModels
             NewCustomerDiscount = 0;
         }
 
+        public CustomerEditorViewModel CustomerEditorViewModel { get; }
+
         public ICollectionView CustomersCollectionView { get; }
 
         public Customer SelectedCustomer
@@ -76,8 +79,8 @@ namespace CustomersTestApp.ViewModels
                 OnPropertyChanged(nameof(IsCustomerSelected)); // Notify that IsCustomerSelected has changed
                 ((RelayCommand)RemoveCustomerCommand).RaiseCanExecuteChanged();
 
-                // Create a copy of the selected customer for editing
-                EditingCustomer = _selectedCustomer != null ? new Customer
+                // Update the CustomerEditorViewModel with the selected customer for editing
+                CustomerEditorViewModel.EditingCustomer = _selectedCustomer != null ? new Customer
                 {
                     Id = _selectedCustomer.Id,
                     Name = _selectedCustomer.Name,
@@ -90,17 +93,6 @@ namespace CustomersTestApp.ViewModels
 
                 // Hide Add Customer Form when a customer is selected
                 IsAddCustomerFormVisible = _selectedCustomer == null;
-            }
-        }
-
-        public Customer EditingCustomer
-        {
-            get => _editingCustomer;
-            set
-            {
-                _editingCustomer = value;
-                OnPropertyChanged(nameof(EditingCustomer));
-                ((RelayCommand)SaveCustomerCommand).RaiseCanExecuteChanged();
             }
         }
 
@@ -226,12 +218,12 @@ namespace CustomersTestApp.ViewModels
 
         private async Task SaveCustomer()
         {
-            if (EditingCustomer != null)
+            if (CustomerEditorViewModel.EditingCustomer != null)
             {
                 // Update the original SelectedCustomer with the values from EditingCustomer
-                SelectedCustomer.Name = EditingCustomer.Name;
-                SelectedCustomer.Email = EditingCustomer.Email;
-                SelectedCustomer.Discount = EditingCustomer.Discount;
+                SelectedCustomer.Name = CustomerEditorViewModel.EditingCustomer.Name;
+                SelectedCustomer.Email = CustomerEditorViewModel.EditingCustomer.Email;
+                SelectedCustomer.Discount = CustomerEditorViewModel.EditingCustomer.Discount;
 
                 var success = await _customerService.UpdateCustomer(SelectedCustomer);
                 if (success)
@@ -247,7 +239,7 @@ namespace CustomersTestApp.ViewModels
             {
                 return IsValidCustomer(new Customer { Name = NewCustomerName, Email = NewCustomerEmail, Discount = NewCustomerDiscount ?? 0 });
             }
-            return IsValidCustomer(EditingCustomer);
+            return IsValidCustomer(CustomerEditorViewModel.EditingCustomer);
         }
 
         private bool IsValidCustomer(Customer customer)

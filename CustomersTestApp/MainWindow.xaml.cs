@@ -21,6 +21,15 @@ namespace CustomersTestApp
             e.Handled = regex.IsMatch(e.Text);
         }
 
+        private void NumericTextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            e.Handled = !IsTextNumeric(e.Text);
+        }
+
+        private static bool IsTextNumeric(string str)
+        {
+            return Regex.IsMatch(str, @"^\d+$");
+        }
         private void Discount_LostFocus(object sender, RoutedEventArgs e)
         {
             if (sender is TextBox textBox)

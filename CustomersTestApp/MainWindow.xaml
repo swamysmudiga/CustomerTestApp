@@ -9,6 +9,20 @@
         <DataTemplate x:Key="EmptyTemplate">
             <views:EmptyView />
         </DataTemplate>
+
+        <ControlTemplate x:Key="validationTemplate">
+            <DockPanel>
+                <TextBlock Foreground="Red" DockPanel.Dock="Right" Margin="5,0,0,0" 
+                           Text="{Binding ElementName=customAdorner, Path=AdornedElement.(Validation.Errors)[0].ErrorContent}"/>
+                <AdornedElementPlaceholder x:Name="customAdorner"/>
+            </DockPanel>
+        </ControlTemplate>
+
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <Style x:Key="NumericTextBoxStyle" TargetType="TextBox">
+            <EventSetter Event="PreviewTextInput" Handler="NumericTextBox_PreviewTextInput"/>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -21,7 +35,7 @@
         </Grid.ColumnDefinitions>
 
         <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="10">
-            <TextBox Width="200" Margin="0,0,10,0" Style="{StaticResource WatermarkTextBoxStyle}" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox Width="200" Margin="0,0,10,0" Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" />
             <ComboBox Width="100" SelectedValue="{Binding FilterType, UpdateSourceTrigger=PropertyChanged}" SelectedValuePath="Content">
                 <ComboBoxItem Content="Name" IsSelected="True"/>
                 <ComboBoxItem Content="Email" />
@@ -36,6 +50,7 @@
                         <TextBlock Text="{Binding Name}" />
                         <TextBlock Text="{Binding Email}" />
                         <TextBlock Text="{Binding Discount, StringFormat='{}{0}%'}" />
+                        <TextBlock Text="{Binding Id}" />
                         <Button Content="Remove" 
                                 Command="{Binding DataContext.RemoveCustomerCommand, RelativeSource={RelativeSource AncestorType=ListBox}}" 
                                 CommandParameter="{Binding}" 
@@ -46,7 +61,7 @@
         </ListBox>
 
         <StackPanel Grid.Row="1" Grid.Column="1">
-            <ContentControl Content="{Binding EditingCustomer}">
+            <ContentControl Content="{Binding CustomerEditorViewModel}">
                 <ContentControl.Style>
                     <Style TargetType="ContentControl">
                         <Setter Property="ContentTemplate">
@@ -57,7 +72,7 @@
                             </Setter.Value>
                         </Setter>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding EditingCustomer}" Value="{x:Null}">
+                            <DataTrigger Binding="{Binding CustomerEditorViewModel.EditingCustomer}" Value="{x:Null}">
                                 <Setter Property="ContentTemplate" Value="{StaticResource EmptyTemplate}" />
                             </DataTrigger>
                         </Style.Triggers>
@@ -80,7 +95,7 @@
                     <TextBox Text="{Binding NewCustomerDiscount, UpdateSourceTrigger=PropertyChanged, ValidatesOnDataErrors=True, TargetNullValue='', FallbackValue=0}"
                              Validation.ErrorTemplate="{StaticResource validationTemplate}"
                              Width="200"
-                             PreviewTextInput="NumericOnly"/>
+                             Style="{StaticResource NumericTextBoxStyle}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
                     <Button Content="Save" HorizontalAlignment="Left" Command="{Binding AddCustomerCommand}" Margin="10,10,100,10" Width="167" />
