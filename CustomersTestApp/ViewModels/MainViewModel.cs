@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 
@@ -158,7 +159,7 @@ namespace CustomersTestApp.ViewModels
             get => _newCustomerDiscount;
             set
             {
-                _newCustomerDiscount = value ?? 0;
+                _newCustomerDiscount = value;
                 OnPropertyChanged(nameof(NewCustomerDiscount));
                 ((RelayCommand)AddCustomerCommand).RaiseCanExecuteChanged();
             }
@@ -200,6 +201,7 @@ namespace CustomersTestApp.ViewModels
                 NewCustomerName = string.Empty;
                 NewCustomerEmail = string.Empty;
                 NewCustomerDiscount = 0;
+                MessageBox.Show("New customer added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
 
@@ -229,6 +231,7 @@ namespace CustomersTestApp.ViewModels
                 if (success)
                 {
                     CustomersCollectionView.Refresh();
+                    MessageBox.Show("Customer details updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
         }
